@@ -43,26 +43,20 @@ final class CostCalculator
 
         $rates = $pricing->rates;
 
-        $expectedProvider = $this->actual([
-            'input_text' => $expectedTextTokens,
-            'input_image' => $imageTokens,
-            'output' => $outputTokens,
-            'reasoning' => $expectedReasoningTokens,
-        ], $rates);
+        $expectedTextCostNano = Nano::tokenCost($expectedTextTokens, $rates->inputText);
+        $minTextCostNano = Nano::tokenCost($minTextTokens, $rates->inputText);
+        $maxTextCostNano = Nano::tokenCost($maxTextTokens, $rates->inputText);
 
-        $minProvider = $this->actual([
-            'input_text' => $minTextTokens,
-            'input_image' => $imageTokens,
-            'output' => $outputTokens,
-            'reasoning' => $minReasoningTokens,
-        ], $rates);
+        $imageCostNano = Nano::tokenCost($imageTokens, $rates->inputImage);
+        $outputCostNano = Nano::tokenCost($outputTokens, $rates->output);
 
-        $maxProvider = $this->actual([
-            'input_text' => $maxTextTokens,
-            'input_image' => $imageTokens,
-            'output' => $outputTokens,
-            'reasoning' => $maxReasoningTokens,
-        ], $rates);
+        $expectedReasoningCostNano = Nano::tokenCost($expectedReasoningTokens, $rates->reasoning);
+        $minReasoningCostNano = Nano::tokenCost($minReasoningTokens, $rates->reasoning);
+        $maxReasoningCostNano = Nano::tokenCost($maxReasoningTokens, $rates->reasoning);
+
+        $expectedProvider = $expectedTextCostNano + $imageCostNano + $outputCostNano + $expectedReasoningCostNano;
+        $minProvider = $minTextCostNano + $imageCostNano + $outputCostNano + $minReasoningCostNano;
+        $maxProvider = $maxTextCostNano + $imageCostNano + $outputCostNano + $maxReasoningCostNano;
 
         return new CostEstimate(
             expectedProviderCostNano: $expectedProvider,
@@ -71,6 +65,33 @@ final class CostCalculator
             expectedChargedNano: $this->charge($expectedProvider),
             minChargedNano: $this->charge($minProvider),
             maxChargedNano: $this->charge($maxProvider),
+            breakdown: [
+                'input_text' => [
+                    'expected_tokens' => $expectedTextTokens,
+                    'min_tokens' => $minTextTokens,
+                    'max_tokens' => $maxTextTokens,
+                    'expected_cost_nano' => $expectedTextCostNano,
+                    'min_cost_nano' => $minTextCostNano,
+                    'max_cost_nano' => $maxTextCostNano,
+                ],
+                'input_image' => [
+                    'image_count' => $referenceImageCount,
+                    'tokens' => $imageTokens,
+                    'cost_nano' => $imageCostNano,
+                ],
+                'output' => [
+                    'tokens' => $outputTokens,
+                    'cost_nano' => $outputCostNano,
+                ],
+                'reasoning' => [
+                    'expected_tokens' => $expectedReasoningTokens,
+                    'min_tokens' => $minReasoningTokens,
+                    'max_tokens' => $maxReasoningTokens,
+                    'expected_cost_nano' => $expectedReasoningCostNano,
+                    'min_cost_nano' => $minReasoningCostNano,
+                    'max_cost_nano' => $maxReasoningCostNano,
+                ],
+            ],
         );
     }
 
