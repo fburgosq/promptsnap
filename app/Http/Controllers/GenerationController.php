@@ -16,6 +16,7 @@ use App\Services\Pricing\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,8 +24,10 @@ class GenerationController extends Controller
 {
     public function index(Request $request): Response
     {
-        $generations = $request->user()
-            ->generations()
+        Gate::authorize('viewAny', Generation::class);
+
+        $generations = Generation::query()
+            ->forUser($request->user())
             ->latest('created_at')
             ->orderByDesc('id')
             ->paginate(12);
