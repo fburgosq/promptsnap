@@ -4,6 +4,7 @@ namespace App\Services\Generations;
 
 use App\Enums\GenerationStatus;
 use App\Models\Generation;
+use App\Services\Credits\CreditLedgerService;
 use App\Services\Pricing\CostCalculator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,7 @@ final class GenerationSettler
 {
     public function __construct(
         private readonly CostCalculator $costCalculator,
+        private readonly CreditLedgerService $creditLedger = new CreditLedgerService,
     ) {}
 
     /**
@@ -117,7 +119,8 @@ final class GenerationSettler
                 $expiresAt = $this->extractImageExpiry($providerGeneration, $completedAt, $imageUrl !== null);
 
                 $providerCostNano = $this->costCalculator->actual($usage, $rates, GenerationStatus::Succeeded);
-                $chargedNano = $this->costCalculator->charge($providerCostNano);
+                $rawChargedNano = $this->costCalculator->charge($providerCostNano);
+                $chargedNano = $this->creditLedger->debitForSucceededGeneration($locked, $rawChargedNano);
 
                 $locked->status = GenerationStatus::Succeeded;
                 $locked->rates = $rates;

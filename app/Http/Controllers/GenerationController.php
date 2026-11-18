@@ -11,11 +11,17 @@ use App\Http\Resources\CostEstimateResource;
 use App\Http\Resources\GenerationResource;
 use App\Jobs\SubmitGenerationJob;
 use App\Models\Generation;
+use App\Models\User;
+use App\Services\Credits\CreditLedgerService;
+use App\Services\Credits\InsufficientCreditsException;
 use App\Services\Pricing\CostCalculator;
 use App\Services\Pricing\PricingService;
+use App\Support\Nano;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,8 +29,10 @@ class GenerationController extends Controller
 {
     public function index(Request $request): Response
     {
-        $generations = $request->user()
-            ->generations()
+        Gate::authorize('viewAny', Generation::class);
+
+        $generations = Generation::query()
+            ->forUser($request->user())
             ->latest('created_at')
             ->orderByDesc('id')
             ->paginate(12);
@@ -64,7 +72,7 @@ class GenerationController extends Controller
                 ['value' => ImageQuality::Medium->value, 'label' => 'Medium (Default)'],
                 ['value' => ImageQuality::High->value, 'label' => 'High'],
             ],
-            'initialEstimate' => (new CostEstimateResource($initialEstimate, $calculator))->resolve(),
+            'initialEstimate' => (new CostEstimateResource($initialEstimate))->resolve(),
         ]);
     }
 
@@ -85,7 +93,7 @@ class GenerationController extends Controller
         );
 
         return response()->json(
-            (new CostEstimateResource($estimate, $calculator))->resolve($request)
+            (new CostEstimateResource($estimate))->resolve($request)
         );
     }
 
@@ -93,6 +101,7 @@ class GenerationController extends Controller
         StoreGenerationRequest $request,
         PricingService $pricingService,
         CostCalculator $calculator,
+        CreditLedgerService $creditLedger,
     ): RedirectResponse {
         $validated = $request->validated();
         $pricing = $pricingService->current();
@@ -110,16 +119,29 @@ class GenerationController extends Controller
             pricing: $pricing,
         );
 
-        $generation = Generation::query()->create([
-            'user_id' => $request->user()->id,
-            'status' => GenerationStatus::Queued,
-            'prompt' => (string) $validated['prompt'],
-            'size' => $size,
-            'quality' => $quality,
-            'reference_images' => $referenceImages,
-            'estimated_charge_nano' => $estimate->expectedChargedNano,
-            'estimated_max_charge_nano' => $estimate->maxChargedNano,
-        ]);
+        try {
+            $generation = $creditLedger->reserveAndCreateGeneration(
+                user: $request->user(),
+                requiredMaxChargeNano: $estimate->maxChargedNano,
+                createCallback: fn (User $lockedUser): Generation => Generation::query()->create([
+                    'user_id' => $lockedUser->id,
+                    'status' => GenerationStatus::Queued,
+                    'prompt' => (string) $validated['prompt'],
+                    'size' => $size,
+                    'quality' => $quality,
+                    'reference_images' => $referenceImages,
+                    'estimated_charge_nano' => $estimate->expectedChargedNano,
+                    'estimated_max_charge_nano' => $estimate->maxChargedNano,
+                ]),
+            );
+        } catch (InsufficientCreditsException $exception) {
+            $availableFormatted = Nano::format($exception->availableNano);
+            $requiredFormatted = Nano::format($exception->requiredMaxChargeNano);
+
+            throw ValidationException::withMessages([
+                'credits' => "Insufficient available credits ({$availableFormatted} available after in-flight reservations; up to {$requiredFormatted} needed). Please buy more credits to continue.",
+            ]);
+        }
 
         SubmitGenerationJob::dispatch($generation);
 

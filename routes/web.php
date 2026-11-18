@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminReportController;
+use App\Http\Controllers\CreditController;
 use App\Http\Controllers\GenerationController;
 use App\Http\Controllers\Webhooks\PixelforgeWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +21,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/estimate', [GenerationController::class, 'estimate'])
         ->middleware('throttle:60,1')
         ->name('generations.estimate');
+
+    Route::get('/credits', [CreditController::class, 'index'])->name('credits.index');
+    Route::post('/credits/purchase', [CreditController::class, 'store'])->name('credits.purchase');
+
+    Route::get('/admin/report', AdminReportController::class)
+        ->middleware('admin')
+        ->name('admin.report');
 });
 
 require __DIR__.'/settings.php';
