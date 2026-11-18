@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import {
+    BarChart3,
     BookOpen,
     FolderGit2,
     History,
     LayoutGrid,
     Sparkles,
 } from '@lucide/vue';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -21,29 +23,44 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { report as adminReport } from '@/routes/admin';
 import {
     create as createGeneration,
     index as generationsIndex,
 } from '@/routes/generations';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Generate',
-        href: createGeneration(),
-        icon: Sparkles,
-    },
-    {
-        title: 'History',
-        href: generationsIndex(),
-        icon: History,
-    },
-];
+const page = usePage();
+
+const mainNavItems = computed<NavItem[]>(() => {
+    const items: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+        {
+            title: 'Generate',
+            href: createGeneration(),
+            icon: Sparkles,
+        },
+        {
+            title: 'History',
+            href: generationsIndex(),
+            icon: History,
+        },
+    ];
+
+    if (page.props.auth?.user?.is_admin) {
+        items.push({
+            title: 'Admin Report',
+            href: adminReport(),
+            icon: BarChart3,
+        });
+    }
+
+    return items;
+});
 
 const footerNavItems: NavItem[] = [
     {
