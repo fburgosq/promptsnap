@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Services\Pricing\CostCalculator;
 use App\Services\Pricing\CostEstimate;
 use App\Support\Nano;
 use Illuminate\Http\Request;
@@ -15,13 +14,6 @@ class CostEstimateResource extends JsonResource
 {
     public static $wrap = null;
 
-    public function __construct(
-        CostEstimate $resource,
-        private readonly CostCalculator $calculator = new CostCalculator,
-    ) {
-        parent::__construct($resource);
-    }
-
     /**
      * @return array<string, mixed>
      */
@@ -30,16 +22,16 @@ class CostEstimateResource extends JsonResource
         $estimate = $this->resource;
         $breakdown = $estimate->breakdown;
 
-        $textExpectedCharged = $this->calculator->charge($breakdown['input_text']['expected_cost_nano']);
-        $textMinCharged = $this->calculator->charge($breakdown['input_text']['min_cost_nano']);
-        $textMaxCharged = $this->calculator->charge($breakdown['input_text']['max_cost_nano']);
+        $textExpectedNano = $breakdown['input_text']['expected_cost_nano'];
+        $textMinNano = $breakdown['input_text']['min_cost_nano'];
+        $textMaxNano = $breakdown['input_text']['max_cost_nano'];
 
-        $imageCharged = $this->calculator->charge($breakdown['input_image']['cost_nano']);
-        $outputCharged = $this->calculator->charge($breakdown['output']['cost_nano']);
+        $imageNano = $breakdown['input_image']['cost_nano'];
+        $outputNano = $breakdown['output']['cost_nano'];
 
-        $reasoningExpectedCharged = $this->calculator->charge($breakdown['reasoning']['expected_cost_nano']);
-        $reasoningMinCharged = $this->calculator->charge($breakdown['reasoning']['min_cost_nano']);
-        $reasoningMaxCharged = $this->calculator->charge($breakdown['reasoning']['max_cost_nano']);
+        $reasoningExpectedNano = $breakdown['reasoning']['expected_cost_nano'];
+        $reasoningMinNano = $breakdown['reasoning']['min_cost_nano'];
+        $reasoningMaxNano = $breakdown['reasoning']['max_cost_nano'];
 
         return [
             'expected_charge_nano' => $estimate->expectedChargedNano,
@@ -58,33 +50,33 @@ class CostEstimateResource extends JsonResource
                     'expected_tokens' => $breakdown['input_text']['expected_tokens'],
                     'min_tokens' => $breakdown['input_text']['min_tokens'],
                     'max_tokens' => $breakdown['input_text']['max_tokens'],
-                    'expected_charge_nano' => $textExpectedCharged,
-                    'expected_charge_formatted' => Nano::format($textExpectedCharged),
-                    'min_charge_formatted' => Nano::format($textMinCharged),
-                    'max_charge_formatted' => Nano::format($textMaxCharged),
+                    'expected_charge_nano' => $textExpectedNano,
+                    'expected_charge_formatted' => Nano::format($textExpectedNano),
+                    'min_charge_formatted' => Nano::format($textMinNano),
+                    'max_charge_formatted' => Nano::format($textMaxNano),
                 ],
                 'input_image' => [
                     'label' => 'Reference images',
                     'image_count' => $breakdown['input_image']['image_count'],
                     'tokens' => $breakdown['input_image']['tokens'],
-                    'charge_nano' => $imageCharged,
-                    'charge_formatted' => Nano::format($imageCharged),
+                    'charge_nano' => $imageNano,
+                    'charge_formatted' => Nano::format($imageNano),
                 ],
                 'output' => [
                     'label' => 'Rendered image output',
                     'tokens' => $breakdown['output']['tokens'],
-                    'charge_nano' => $outputCharged,
-                    'charge_formatted' => Nano::format($outputCharged),
+                    'charge_nano' => $outputNano,
+                    'charge_formatted' => Nano::format($outputNano),
                 ],
                 'reasoning' => [
                     'label' => 'Model thinking (reasoning)',
                     'expected_tokens' => $breakdown['reasoning']['expected_tokens'],
                     'min_tokens' => $breakdown['reasoning']['min_tokens'],
                     'max_tokens' => $breakdown['reasoning']['max_tokens'],
-                    'expected_charge_nano' => $reasoningExpectedCharged,
-                    'expected_charge_formatted' => Nano::format($reasoningExpectedCharged),
-                    'min_charge_formatted' => Nano::format($reasoningMinCharged),
-                    'max_charge_formatted' => Nano::format($reasoningMaxCharged),
+                    'expected_charge_nano' => $reasoningExpectedNano,
+                    'expected_charge_formatted' => Nano::format($reasoningExpectedNano),
+                    'min_charge_formatted' => Nano::format($reasoningMinNano),
+                    'max_charge_formatted' => Nano::format($reasoningMaxNano),
                 ],
             ],
         ];

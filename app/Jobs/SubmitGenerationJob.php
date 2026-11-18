@@ -132,10 +132,6 @@ class SubmitGenerationJob implements ShouldBeUnique, ShouldQueue
         }
 
         $settler->applyProviderSnapshot($generation, $snapshot);
-
-        if ($generation->submitted_at === null) {
-            $generation->update(['submitted_at' => Carbon::now('UTC')]);
-        }
     }
 
     public function failed(?Throwable $exception): void

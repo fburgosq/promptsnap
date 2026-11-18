@@ -67,7 +67,7 @@ class GenerationController extends Controller
                 ['value' => ImageQuality::Medium->value, 'label' => 'Medium (Default)'],
                 ['value' => ImageQuality::High->value, 'label' => 'High'],
             ],
-            'initialEstimate' => (new CostEstimateResource($initialEstimate, $calculator))->resolve(),
+            'initialEstimate' => (new CostEstimateResource($initialEstimate))->resolve(),
         ]);
     }
 
@@ -88,7 +88,7 @@ class GenerationController extends Controller
         );
 
         return response()->json(
-            (new CostEstimateResource($estimate, $calculator))->resolve($request)
+            (new CostEstimateResource($estimate))->resolve($request)
         );
     }
 
