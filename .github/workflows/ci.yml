@@ -154,11 +154,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
-      - name: Install Composer dependencies and prepare .env
+      - name: Install Composer dependencies and generate Wayfinder routes
         run: |
           composer install --no-interaction --prefer-dist --no-progress
           cp .env.example .env
           php artisan key:generate --ansi
+          php artisan wayfinder:generate --with-form --no-interaction
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
