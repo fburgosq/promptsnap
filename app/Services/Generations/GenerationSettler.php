@@ -159,6 +159,45 @@ final class GenerationSettler
     }
 
     /**
+     * Mark a generation as failed locally (e.g. terminal API rejection or exhausted retries).
+     *
+     * Runs inside a database transaction with a row-level lock (`lockForUpdate`),
+     * refuses to move out of a final state, and guarantees provider_cost_nano = 0 and charged_nano = 0.
+     */
+    public function failLocally(Generation $g, string $code, string $message): bool
+    {
+        return (bool) DB::transaction(function () use ($g, $code, $message): bool {
+            /** @var Generation|null $locked */
+            $locked = Generation::query()
+                ->whereKey($g->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null) {
+                return false;
+            }
+
+            if ($locked->status->isFinal()) {
+                $this->syncInstance($g, $locked);
+
+                return false;
+            }
+
+            $locked->status = GenerationStatus::Failed;
+            $locked->provider_cost_nano = 0;
+            $locked->charged_nano = 0;
+            $locked->error_code = $code;
+            $locked->error_message = $message;
+            $locked->completed_at = Carbon::now('UTC');
+            $locked->save();
+
+            $this->syncInstance($g, $locked);
+
+            return true;
+        });
+    }
+
+    /**
      * @param  array<string, mixed>  $providerGeneration
      */
     private function extractImageUrl(array $providerGeneration): ?string
