@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     BarChart3,
     BookOpen,
+    Coins,
     FolderGit2,
     History,
     LayoutGrid,
@@ -13,6 +14,8 @@ import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Sidebar,
     SidebarContent,
@@ -24,6 +27,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { report as adminReport } from '@/routes/admin';
+import { index as creditsIndex } from '@/routes/credits';
 import {
     create as createGeneration,
     index as generationsIndex,
@@ -31,6 +35,7 @@ import {
 import type { NavItem } from '@/types';
 
 const page = usePage();
+const credits = computed(() => page.props.auth?.credits);
 
 const mainNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
@@ -48,6 +53,11 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: 'History',
             href: generationsIndex(),
             icon: History,
+        },
+        {
+            title: 'Buy Credits',
+            href: creditsIndex(),
+            icon: Coins,
         },
     ];
 
@@ -92,6 +102,46 @@ const footerNavItems: NavItem[] = [
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
+
+            <div
+                v-if="credits"
+                data-test="nav-credits-widget"
+                class="mx-2 mt-4 rounded-lg border bg-muted/40 p-3 text-xs group-data-[collapsible=icon]:hidden"
+            >
+                <div class="flex items-center justify-between">
+                    <span class="font-medium text-muted-foreground">
+                        Credit Balance
+                    </span>
+                    <Badge
+                        variant="secondary"
+                        data-test="nav-balance-amount"
+                        class="font-mono tabular-nums"
+                    >
+                        {{ credits.balance_formatted }}
+                    </Badge>
+                </div>
+                <div
+                    v-if="credits.reserved_nano > 0"
+                    class="mt-1 flex items-center justify-between text-[11px] text-muted-foreground"
+                >
+                    <span>Available</span>
+                    <span class="font-mono tabular-nums">{{
+                        credits.available_formatted
+                    }}</span>
+                </div>
+                <Button
+                    as-child
+                    size="sm"
+                    variant="outline"
+                    class="mt-2.5 w-full text-xs"
+                    data-test="nav-buy-credits-button"
+                >
+                    <Link :href="creditsIndex()">
+                        <Coins class="mr-1.5 size-3.5" />
+                        Buy credits
+                    </Link>
+                </Button>
+            </div>
         </SidebarContent>
 
         <SidebarFooter>

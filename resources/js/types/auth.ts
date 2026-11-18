@@ -3,6 +3,7 @@ export type User = {
     name: string;
     email: string;
     is_admin?: boolean;
+    balance_nano?: number;
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
@@ -11,8 +12,18 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type SharedCredits = {
+    balance_nano: number;
+    balance_formatted: string;
+    reserved_nano: number;
+    reserved_formatted: string;
+    available_nano: number;
+    available_formatted: string;
+};
+
 export type Auth = {
     user: User;
+    credits?: SharedCredits | null;
 };
 
 export type Passkey = {

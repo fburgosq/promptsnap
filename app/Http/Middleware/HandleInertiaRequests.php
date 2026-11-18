@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Credits\CreditLedgerService;
+use App\Support\Nano;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,11 +37,30 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $creditsShared = null;
+
+        if ($user !== null) {
+            $ledger = app(CreditLedgerService::class);
+            $reservedNano = $ledger->reservedNanoForUser($user->id);
+            $availableNano = max(0, $user->balance_nano - $reservedNano);
+
+            $creditsShared = [
+                'balance_nano' => $user->balance_nano,
+                'balance_formatted' => Nano::format($user->balance_nano),
+                'reserved_nano' => $reservedNano,
+                'reserved_formatted' => Nano::format($reservedNano),
+                'available_nano' => $availableNano,
+                'available_formatted' => Nano::format($availableNano),
+            ];
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                'credits' => $creditsShared,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

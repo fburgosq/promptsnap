@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { Head, router, useHttp } from '@inertiajs/vue3';
+import { Head, Link, router, useHttp, usePage } from '@inertiajs/vue3';
 import {
+    AlertCircle,
+    Coins,
     ImagePlus,
     Info,
     Plus,
@@ -32,6 +34,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { index as creditsIndex } from '@/routes/credits';
 import { create, estimate as estimateRoute, store } from '@/routes/generations';
 
 interface OptionItem {
@@ -129,6 +132,16 @@ const isSubmitting = ref(false);
 const serverErrors = ref<Record<string, string>>({});
 const isEstimating = ref(false);
 const currentEstimate = ref<CostEstimatePayload>(initialEstimate);
+
+const page = usePage();
+const credits = computed(() => page.props.auth?.credits);
+const hasInsufficientCredits = computed(() => {
+    if (!credits.value) {
+        return false;
+    }
+
+    return credits.value.available_nano < currentEstimate.value.max_charge_nano;
+});
 
 const estimateHttp = useHttp({
     prompt: '',
@@ -287,6 +300,44 @@ function submitGeneration(): void {
                             </CardHeader>
 
                             <CardContent class="space-y-6">
+                                <!-- Insufficient Credits Alert -->
+                                <Alert
+                                    v-if="
+                                        serverErrors.credits ||
+                                        hasInsufficientCredits
+                                    "
+                                    variant="destructive"
+                                    data-test="insufficient-credits-alert"
+                                >
+                                    <AlertCircle class="size-4" />
+                                    <AlertTitle>
+                                        Insufficient Available Credits
+                                    </AlertTitle>
+                                    <AlertDescription
+                                        class="mt-1 flex flex-wrap items-center justify-between gap-3"
+                                    >
+                                        <span>
+                                            {{
+                                                serverErrors.credits ??
+                                                `You have ${credits?.available_formatted ?? '$0.0000'} available after in-flight reservations, and this generation requires up to ${currentEstimate.max_charge_formatted}.`
+                                            }}
+                                        </span>
+                                        <Button
+                                            as-child
+                                            size="sm"
+                                            variant="secondary"
+                                            data-test="buy-credits-alert-link"
+                                        >
+                                            <Link :href="creditsIndex()">
+                                                <Coins
+                                                    class="mr-1.5 size-3.5"
+                                                />
+                                                Buy credits
+                                            </Link>
+                                        </Button>
+                                    </AlertDescription>
+                                </Alert>
+
                                 <!-- Prompt -->
                                 <div class="grid gap-2">
                                     <div
