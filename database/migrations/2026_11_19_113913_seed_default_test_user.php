@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 return new class extends Migration
 {
@@ -29,7 +28,6 @@ return new class extends Migration
                 'created_at' => $now,
             ],
         );
-
     }
 
     /**
