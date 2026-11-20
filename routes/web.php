@@ -4,13 +4,25 @@ use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\GenerationController;
 use App\Http\Controllers\Webhooks\PixelforgeWebhookController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+use Laravel\Fortify\Features;
 
 Route::post('/webhooks/pixelforge', PixelforgeWebhookController::class)
     ->withoutMiddleware('web')
     ->name('webhooks.pixelforge');
 
-Route::inertia('/', 'Welcome')->name('home');
+Route::get('/', function (Request $request) {
+    if ($request->user()) {
+        return to_route('dashboard');
+    }
+
+    return Inertia::render('auth/Login', [
+        'canResetPassword' => Features::enabled(Features::resetPasswords()),
+        'status' => $request->session()->get('status'),
+    ]);
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
