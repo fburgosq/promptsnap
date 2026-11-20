@@ -36,7 +36,7 @@ class GenerationResource extends JsonResource
 
         $statusDescription = match ($this->status) {
             GenerationStatus::Queued => $this->provider_id === null
-                ? 'Waiting in our queue to submit to Pixelforge...'
+                ? '1 minute Waiting in our queue to submit to Pixelforge...'
                 : 'Waiting in the Pixelforge render queue...',
             GenerationStatus::Processing => 'Generating your image now...',
             GenerationStatus::Succeeded => 'Image completed.',

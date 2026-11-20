@@ -112,7 +112,7 @@ it('distinguishes queue status copy, expired images, succeeded charges, and free
             ->has('generations.data', 6)
             // 0: localQueued
             ->where('generations.data.0.id', $localQueued->id)
-            ->where('generations.data.0.status_description', 'Waiting in our queue to submit to Pixelforge...')
+            ->where('generations.data.0.status_description', '1 minute Waiting in our queue to submit to Pixelforge...')
             ->where('generations.data.0.is_final', false)
             // 1: remoteQueued
             ->where('generations.data.1.id', $remoteQueued->id)

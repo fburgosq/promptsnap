@@ -147,10 +147,10 @@ class GenerationController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Generation queued! Your image is being processed.',
+            'message' => 'Generation queued takes around 1 minute to complete! Your image is being processed.',
         ]);
 
         return to_route('generations.index')
-            ->with('status', 'Generation queued! Your image is being processed.');
+            ->with('status', 'Generation queued takes around 1 minute to complete! Your image is being processed.');
     }
 }
