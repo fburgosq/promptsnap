@@ -21,7 +21,7 @@ return new class extends Migration
             ['email' => 'test@example.com'],
             [
                 'name' => 'Test User',
-                'password' => Hash::make('AnypassworD'),
+                'password' => '$2y$12$Eitwtkv9vnpYeLrY0dgbZunbEG9yF9Fz9op5GJc0jkGSobOfAYdte',
                 'email_verified_at' => $now,
                 'is_admin' => true,
                 'balance_nano' => 25_000_000_000,

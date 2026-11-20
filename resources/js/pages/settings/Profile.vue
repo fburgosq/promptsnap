@@ -60,13 +60,13 @@ const user = computed(() => page.props.auth.user);
 
             <div class="grid gap-2">
                 <Label for="email">Email address</Label>
+                <input type="hidden" name="email" :value="user.email" />
                 <Input
                     id="email"
                     type="email"
                     class="mt-1 block w-full"
-                    name="email"
                     :default-value="user.email"
-                    required
+                    disabled
                     autocomplete="username"
                     placeholder="Email address"
                 />
